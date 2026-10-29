@@ -1,0 +1,17 @@
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor folders
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# Precautions: the project has no dependencies or secrets, but keep these out if they ever appear
+node_modules/
+.env
+
+# Local Claude Code settings
+.claude/settings.local.json

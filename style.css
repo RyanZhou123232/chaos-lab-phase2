@@ -1,0 +1,18 @@
+html,
+body {
+  margin: 0;
+  height: 100%;
+  background: #111214;
+}
+
+body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#game-canvas {
+  display: block;
+  /* Visible frame so the fixed-size play area reads as a game window. */
+  border: 2px solid #2a2c31;
+}
