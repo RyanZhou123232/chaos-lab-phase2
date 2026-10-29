@@ -1,82 +1,91 @@
 # Chaos Lab: Critical Transit
 
-## Overview
+Original game design and foundation: **1h-barryy** (also recorded as **PeachSoda2001** in the source Git history). [Original repository](https://github.com/1h-barryy/2026-11-01_chaotic_lab).
 
-Chaos Lab is a small, single-player 2D browser game. You play a technician inside a moving laboratory, keeping Power, Cooling, and Stabilizer running until the lab reaches its destination. The lab travels automatically; your job is to handle the repairs.
+Phase 2 continuation: **RyanZhou123232**, with AI assistance documented in `prompt_log.md`.
 
-Each system's Danger rises over time, and random incidents make things worse. Repairing one system lowers its Danger but adds stress to the next: **Power → Cooling → Stabilizer → Power**. Keep Laboratory Integrity above zero until the timer runs out.
+## Play
 
-The current build uses HTML, CSS, and JavaScript with Canvas. The full design is in [SPEC.md](SPEC.md).
+Download the repository, keep the files together, and open **index.html** in a desktop browser. No installation, server, build step, or internet connection is required. Direct `file://` loading was verified in Chrome.
 
-## How to Run
+You are a technician in a moving laboratory. Survive **90 seconds** while keeping Laboratory Integrity above zero. Move with **WASD or arrow keys**. Near a station, **hold E for 1.5 seconds** to repair it. Releasing E or leaving range cancels progress. Release and press E again after completing or cancelling a repair; holding E before entering range does not start a repair. Press **R** after winning or losing to restart.
 
-1. Download or clone the project, keeping the files together.
-2. Open `index.html` in a desktop browser. The game starts immediately.
+Repairing reduces that system's Danger by **45**, but adds **15** to the next: **Power -> Cooling -> Stabilizer -> Power**. All systems begin at **40 Danger**, gain **1.2/s**, warn at **60**, and overload at **80**. Each overloaded system drains **6 Integrity/s**. Every **6 seconds**, a random system receives **+30 Danger** and an on-screen warning. Danger is clamped to 0–100.
 
-There are no dependencies to install and no server is required by the code. Opening the page directly has not been verified in a browser during this cleanup.
+Walk directly between the stations and repair the most urgent system. Consider where each repair sends its extra stress. Stations can be walked over; only the walls are solid.
 
-For the existing automated rules checks, run this from the project root with Node.js installed:
+## How conflicting instructions were resolved
+
+The original `SPEC.md` is unchanged. Its earlier prose conflicts with its numbered acceptance criteria. The Phase 2 owner explicitly chose the **numbered criteria** as authoritative:
+
+- Criterion 2 requires **40 / 1.2 per second**, while earlier prose says 25 / 0.9. Keep 40 / 1.2.
+- Criterion 6 requires **90 seconds**, while earlier prose says 60. Change 60 to 90.
+- Criterion 8 requires **6-second incidents**, while earlier prose says 9. Keep 6 seconds.
+
+The inherited README advised changing Danger and incidents back to the earlier prose. That recommendation was inconsistent with the numbered criteria and is superseded by this decision. See `PHASE2_PLAN.md` for the recorded scope and baseline.
+
+## Acceptance criteria report
+
+1. **Player Movement — Met.** WASD and arrows move the technician, diagonal speed is normalized, and all four room walls constrain movement; automated rule checks cover both key sets and wall bounds, and Chrome keyboard checks confirm movement.
+2. **System Danger — Met.** Three systems start at 40, increase by 1.2/s, and remain within 0–100; independent checks use literal acceptance values rather than deriving expectations from CONFIG.
+3. **Repair Interaction — Met.** A 1.5-second E hold completes one repair; releasing, leaving range, or losing focus cancels it, with progress reset and a visible progress bar; checks cover each cancellation and Chrome verifies progress, cancellation, and completion.
+4. **Repair Consequences — Met.** Repairs apply -45 locally and +15 to the linked station in the specified loop; all three links are independently checked, and the transfer effect appears in Chrome.
+5. **System Failure — Met.** Warning begins at 60, overload at 80, and damage stacks at 6 Integrity/s per overloaded station; boundary and stacking checks pass, with overload feedback visible in Chrome.
+6. **Win and Lose — Met.** The journey lasts 90 seconds and requires positive Integrity at arrival; zero Integrity loses, including a simultaneous arrival/death tie, and both outcomes were exercised in real Chrome.
+7. **Restart — Met.** R resets both win and loss states, including timer, Integrity, systems, repair, and effects; it does nothing during play, and both end-screen restarts were exercised in Chrome.
+8. **Random Events — Met.** One random system receives +30 every 6 seconds with a named warning; repeated cadence is checked independently, and Chrome confirms warning, flash, and popup.
+9. **Game UI — Met.** The timer, Integrity, three Danger values/bars, and active repair progress are displayed; Chrome screenshots at a 1200×850 viewport were inspected for readable placement.
+10. **Visual Feedback — Met.** Inherited transfer pulses, floating numbers, flashes, overload glow, and incident shake remain; event recording/freezing checks pass and repair, incident, and end-screen screenshots were inspected in Chrome.
+
+## Phase 2 changes and preservation
+
+The first commit is the unmodified source snapshot received at source commit `34d6af0`; its Git tree matches the source exactly. Subsequent commits record the plan, scoped fixes/checks, and documentation. `SPEC.md` has not been edited.
+
+The existing file layout, station links, movement, repair consequences, hazards, state model, and renderer were retained. Production changes are confined to `js/config.js` and a small change in `js/game.js`:
+
+- Increase journey length from 60 to 90 seconds.
+- Count the initial held-key frame toward the 1.5-second repair instead of delaying by one frame. An E tap already released before the frame cannot start a repair.
+- Limit final-frame simulation to the remaining journey time, preventing damage after arrival.
+
+No production functions were discarded or renamed, and no architecture was replaced. The new acceptance checks add coverage; one existing test expectation was updated to reflect the initial repair frame now being counted.
+
+## Code map
+
+- `js/config.js`: all gameplay values, layout, colors, station definitions, and stress links.
+- `js/input.js`: held keys versus fresh presses, browser key handling, and clearing input on focus loss.
+- `js/entities.js`: player and station constructors.
+- `js/game.js`: state and rules; `updateGame` coordinates movement, Danger, repairs, incidents, damage, and outcomes. `updateRepair` handles progress/cancellation; `completeRepair` applies effects and records feedback.
+- `js/render.js`: Canvas drawing and visual effects, reading game state without changing rules.
+- `js/main.js`: the frame loop, delta-time clamp, and input cleanup.
+- `index.html` / `style.css`: page, Canvas, and classic-script loading.
+- `tools/rules-check.js`: inherited regression suite, using a simulated Canvas.
+- `tools/acceptance-check.js`: independent numbered gameplay acceptance checks.
+- `tools/browser-check.cjs`: optional real-Chrome test of file loading, input, rendering, both endings, and restart; screenshots are written to `docs/screenshots/`.
+
+Classic scripts share globals and load in this order: `config -> input -> entities -> game -> render -> main`. Preserve this order. Gameplay belongs in `game.js`; drawing belongs in `render.js`.
+
+## Verification
+
+With Node.js installed, run these from the repository root:
 
 ```sh
 node tools/rules-check.js
+node tools/acceptance-check.js
 ```
 
-All nine checks passed during this cleanup. They simulate input and game updates using a fake canvas, so they do not verify browser rendering or visual clarity.
+Both suites pass: nine inherited regression checks and nine independent acceptance groups. The suites do not replace browser checks.
 
-## Controls
+For optional browser verification, install Playwright in a separate development environment, make it available to Node, then run `node tools/browser-check.cjs`. Set `CHROME_PATH` to an installed Chrome executable, or use Playwright's installed Chromium. This development-only tool is not needed to play the game.
 
-| Key | Action |
-| --- | --- |
-| WASD or arrow keys | Move around the lab. Walls keep you inside. |
-| Hold E near a station | Repair it after 1.5 seconds. Releasing E or leaving range cancels progress. |
-| R on the win/lose screen | Restart the game. |
+Real headless Chrome was tested with direct `file://` loading, actual browser keyboard events, the production update/render loop, a controlled animation clock, and a fixed random target. It verified movement, mid-repair progress, cancellation, repair completion, transfer, incidents, a loss, restart, and a full 90-second victory using an automated repair strategy (30 repair-route cycles), followed by another restart. No page JavaScript errors were reported. This demonstrates a complete playable route under that event sequence; broad human playtesting and balance across random seeds remain future work.
 
-Each repair needs a fresh E press. Release and press again after completing or cancelling a repair, or if you entered range while already holding E.
+[Repair progress](docs/screenshots/chaos-lab-repair.png) · [Incident and overload](docs/screenshots/chaos-lab-incident.png) · [Victory](docs/screenshots/chaos-lab-win.png)
 
-## Current Progress
+## Known limitations and next steps
 
-Status is based on the acceptance criteria in [SPEC.md](SPEC.md), source inspection, and the existing rules checks. **Met** means implemented in code; browser behavior and visual readability still need checking. The checks use the current configuration, so passing them does not mean the tuning matches the spec.
-
-| # | Criterion | Status | Notes |
-| --- | --- | --- | --- |
-| 1 | Player Movement | Met | WASD/arrows, equal diagonal speed, and wall bounds are implemented. |
-| 2 | System Danger | Partially Met | Clamped to 0–100, but starts at **40** and rises **1.2/s**; spec requires 25 and 0.9/s. |
-| 3 | Repair Interaction | Met | 1.5-second hold; releasing E or leaving range resets progress. |
-| 4 | Repair Consequences | Met | −45 Danger locally, +15 to the next system in the specified loop. |
-| 5 | System Failure | Met | Warning at 60, overload at 80; each overload drains 6 Integrity/s. |
-| 6 | Win and Lose | Partially Met | Win with Integrity remaining, lose at zero; rounds last **60 seconds**, rather than the specified 90. |
-| 7 | Restart | Met | R resets the game after a win or loss. |
-| 8 | Random Events | Partially Met | Random system gains +30 with a warning every **6 seconds**; spec requires 9. |
-| 9 | Game UI | Met | Drawing code includes time, Integrity, Danger values/bars, and repair progress. Browser readability is unverified. |
-| 10 | Visual Feedback | Met | Pulses, flashes, floating numbers, and incident shake are implemented. Their appearance is unverified. |
-
-## Code Structure
-
-| File | What to look for |
-| --- | --- |
-| `js/config.js` | Gameplay values, layout, colors, and station links in `CONFIG`. Start here for tuning. |
-| `js/game.js` | Rules and state. `updateGame` runs each frame; `updateRepair` handles holds/cancels; `completeRepair` applies the repair and linked stress; `updateRandomIncidents` and `applyOverloadDamageToIntegrity` handle hazards. Win/lose checks are at the end of `updateGame`. |
-| `js/render.js` | Canvas drawing and effects. Start at `renderGame` for UI or visual changes. |
-| `js/input.js` | Keyboard input and `KEY_BINDINGS`. Tracks held keys separately from fresh presses. |
-| `js/entities.js` | `createPlayer` and `createStations` build the starting objects. |
-| `js/main.js` | Starts the frame loop: update, draw, then clear fresh key presses. |
-| `index.html` / `style.css` | Canvas, script loading, and page layout. |
-| `tools/rules-check.js` | Existing automated checks; not loaded by the game. |
-
-The scripts share globals and load in this order: `config → input → entities → game → render → main`. Keep that order and avoid duplicate global names. Rules belong in `game.js`; drawing belongs in `render.js`.
-
-## Next Steps
-
-1. Bring the four mismatched values in `js/config.js` back to the spec: 25 starting Danger, 0.9/s increase, 90-second rounds, and 9-second incidents.
-2. Check movement, repairs, cancellation, win/lose, and restart in a desktop browser. The existing checks do not cover every acceptance criterion.
-3. Playtest the specified tuning. The previous README reports a few informal author playtests; balance still needs a focused review.
-4. Check UI and effects in a browser, especially overlapping floating numbers, warning/progress placement, and smaller windows. Fix readability problems before adding polish.
-
-## Known Issues / Shortcuts
-
-- Floating numbers show the configured change, even when Danger hits its 0 or 100 limit. A repair at 20 Danger still displays −45.
-- Popups on the same station can overlap because they share a drawing path and have no stacking offset.
-- Linked Danger changes immediately, but the pulse and +15 popup arrive 0.4 seconds later. Only the feedback is delayed.
-- Stations are intentionally not solid; the player can walk over them. Only walls block movement.
-- The canvas is fixed at 960×640, with no resize handling or touch controls. Small-window layout has not been verified.
-- The art uses basic shapes. Sound and particles are not implemented and are not required by the acceptance criteria.
+- Floating numbers show the configured change even when clamping makes the actual change smaller; e.g. repairing Danger 20 still displays -45. Concurrent popups can overlap.
+- Linked Danger changes immediately; its visual pulse and +15 popup arrive 0.4 seconds later. This is feedback timing only.
+- The Canvas remains fixed at 960×640. Small-window layout, touch controls, and mobile play are outside this inherited version and have not been validated.
+- Basic shape art, no sound or particles. These are outside the numbered acceptance requirements.
+- Human playtesting across more random incident sequences is still useful; the browser victory test is deterministic and automated.
+- **Before submission, the student must personally write `HANDOFF_REPORT.md`.** The assignment explicitly prohibits AI writing that report, so it is deliberately not generated here. Use the actual inheritance experience, including what helped and what cost time. Confirm the original author's preferred real-name credit if supplied by the course; the repository only establishes the credited handles above.

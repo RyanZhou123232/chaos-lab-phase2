@@ -158,3 +158,38 @@ Rules:
 - Do not touch SPEC.md or README.md. Do not commit.
 
 Report: what was added per file, any new state fields in game.js and why each exists, which items (if any) you skipped and why, and anything that needs a visual check in the browser.
+
+---
+
+## Phase 2 — 2026-10-29
+
+**Tool:** Codex desktop; GPT-6-family coding assistant (exact model identifier not exposed in this session). Git/GitHub CLI, Node.js checks, and Playwright with installed Chrome were used for execution and verification. No AI-written HANDOFF_REPORT.md was generated.
+
+### Prompt 1 — Understand the inherited assignment and repository (verbatim)
+
+```text
+[https://www.cs.cmu.edu/\~113/hw7.html#phase2](https://www.cs.cmu.edu/~113/hw7.html#phase2) [https://github.com/1h-barryy/2026-11-01_chaotic_lab](https://github.com/1h-barryy/2026-11-01_chaotic_lab) 开发你的是一个新的 project。这个 project 是，就是它是 collaborative project。然后具体 instruction 你可以看到我的第一个 113 的那个 website，你自己去看一下它的要求是什么。但是大概就是说，我定义一个项目，对吧？然后会有一个我们班上其他人，他也会定义一个项目。然后他会写好他的 PRD 也好，他的 spec 也好，尤其是 spec。然后他会把这个 spec push 到他自己的 GitHub 这里。然后他有一段时间，他就根据他自己的 spec，对吧？在他的那个 repo 里面肯定是做了一点，写了一点东西嘛。然后我现在就是要根据他的 spec，然后看他已经写的这些东西，帮他把他的这个 spec 剩下部分做完。然后具体你可以去看一下这个 GitHub，就是我要别人写好的 spec 和他写好的一点 code，然后我要拿过来继续做的。你看一下这个，你先仔细看那个 113 的 homework 的这个要求，你仔细读。
+```
+
+### Prompt 2 — Create the repo, record conflicts, and follow acceptance criteria (verbatim)
+
+```text
+这样子，你在我的 GitHub 里面建一个 repo，对吧？把它这些东西全部复制过来。然后你先在我的本地，我的本地不是有个 Project Repo 这个 file 吗，里面创一个它的这个文件，然后把它的复制过来的这个 repo 下载一份到我的本地那个 Project Repo 里面它的这个 file 里面，下载一份。然后你 modify 那个 bio，对吧？然后你现在要记的东西是，你记住你刚刚讲的这些内容，对吧？它的这个不一致你把它记录下来。然后我们后面继续走的是，我们按照它的验收标准去做，好吧？你别管它那个 README 怎么写，你就它怎么验收你就怎么写。然后，OK，你就直接开始做吧，没有什么脚本我了，你就直接开始写就好。
+```
+
+### AI behavior that was not wanted, and the correction
+
+The agent's first attempt at exporting and recommitting the source used the machine's default Git line-ending behavior. The resulting Git tree did not match the source, which was not an acceptable unchanged baseline. Comparing every blob and the tree hashes exposed this before functional edits. The agent re-exported with `core.autocrlf=false`, replaced the exported files, and corrected the initial local commit before publication. Both trees then matched `2bf241d58d5d7599d7bd0a5703829b9aac08e157`. No original game logic was changed in that baseline.
+
+The first independent wall test also allowed random hazards to run during a long movement sequence, so a random loss could stop the player before reaching the last wall. This was an unwanted, unreliable test. The correction isolated wall movement by moving incidents out of that test's time window; incidents have their own separate acceptance check. Production hazard rules were not weakened to satisfy the test.
+
+### Actions and verification
+
+- Recorded source/prose/README conflicts in PHASE2_PLAN.md and followed numbered acceptance criteria, as explicitly requested.
+- Retained 40 starting Danger, 1.2/s growth, 6-second incidents, -45 repair, and +15 linked stress; changed only journey tuning from 60 to 90 seconds.
+- Fixed first-frame repair counting and avoided starting repairs on already-released taps; capped the final simulation frame at arrival time.
+- Kept the architecture and original renderer; reviewed the small production diff.
+- Passed all nine inherited regression checks and all nine independent acceptance groups.
+- The first browser strategy used inefficient separate horizontal/vertical routes and lost. It was improved to walk diagonally and stop within repair range, without changing production rules. Under a fixed incident sequence, the revised strategy completed the actual 90-second journey with positive Integrity in 30 route/repair cycles. This is deterministic automated coverage, not a claim of broad human playtesting.
+- Real headless Chrome tested direct file loading, keyboard movement, repair progress/cancellation/completion, transfer feedback, incidents, defeat, victory, and restart from both endings; no page JavaScript errors. Screenshots were visually inspected.
+- Updated README with all ten acceptance results and remaining limitations. The student's non-AI handoff report remains to be written by the student.
