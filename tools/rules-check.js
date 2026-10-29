@@ -87,7 +87,7 @@ test('releasing E cancels and resets progress', () => {
   releaseKey('KeyE'); step(0.1);
   assert.strictEqual(run('state.activeRepair'), null);
   pressKey('KeyE'); step(0.1);
-  near(run('state.activeRepair.elapsedSeconds'), 0); // Starts over, not from 1.0.
+  near(run('state.activeRepair.elapsedSeconds'), 0.1); // Only this fresh frame counts, not the cancelled hold.
   releaseKey('KeyE');
 });
 

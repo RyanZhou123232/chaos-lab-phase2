@@ -49,6 +49,9 @@ function updateGame(state, input, deltaSeconds) {
     return;
   }
 
+  // Only simulate time that belongs to this journey. A slow final frame
+  // must not cause damage after the player has already reached the destination.
+  deltaSeconds = Math.min(deltaSeconds, state.remainingSeconds);
   updatePlayerMovement(state.player, input, deltaSeconds);
   increaseDangerPassively(state.stations, deltaSeconds);
   updateIncidentFeedbackTimers(state, deltaSeconds);
@@ -164,14 +167,15 @@ function distanceFromPointToStationEdge(pointX, pointY, station) {
 // merely held), which is what forces a release + re-press after a completed
 // or cancelled repair.
 function updateRepair(state, input, deltaSeconds) {
-  const repair = state.activeRepair;
-
-  if (repair === null) {
-    if (state.stationInRepairRangeId !== null && input.wasJustPressed(KEY_BINDINGS.repair)) {
+  if (state.activeRepair === null) {
+    if (state.stationInRepairRangeId !== null && input.wasJustPressed(KEY_BINDINGS.repair) &&
+        input.isHeld(KEY_BINDINGS.repair)) {
       state.activeRepair = { stationId: state.stationInRepairRangeId, elapsedSeconds: 0 };
     }
-    return;
   }
+
+  const repair = state.activeRepair;
+  if (repair === null) return;
 
   // Comparing ids (not just "anything in range") also cancels if a
   // different station became the nearest one mid-repair.

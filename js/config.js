@@ -10,7 +10,7 @@ const CONFIG = {
   wallThicknessPixels: 20,       // Visual wall width; also the inset of the walkable area.
 
   // --- Match ---------------------------------------------------------------
-  gameDurationSeconds: 60,       // Survive this long to win.
+  gameDurationSeconds: 90,       // SPEC.md numbered acceptance criterion 6 takes precedence over the earlier prose.
   maxFrameDeltaSeconds: 0.1,     // Clamp so a background tab returning doesn't simulate a huge jump at once.
 
   // --- Danger --------------------------------------------------------------
