@@ -8,6 +8,7 @@ const assert = require('assert');
 function game() {
   const listeners = {};
   const context = vm.createContext({
+    GameRules: require('../js/game-rules.mjs'),
     window: { addEventListener: (name, handler) => { listeners[name] = handler; } },
   });
   for (const name of ['config', 'input', 'entities', 'game']) {

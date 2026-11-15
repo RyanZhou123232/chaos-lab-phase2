@@ -3,7 +3,7 @@
 //
 // Run from anywhere:   node tools/rules-check.js
 //
-// It loads the real game scripts in index.html order into a sandbox with a
+// It loads the gameplay module and classic scripts into a sandbox with a
 // fake window/canvas, drives updateGame() with simulated key events, and
 // asserts on the resulting state. Exits non-zero on the first failure.
 
@@ -18,12 +18,13 @@ const keyListeners = {};
 const noOpCanvasContext = new Proxy({}, { get: () => () => noOpCanvasContext, set: () => true });
 const sandbox = {
   console,
+  GameRules: require('../js/game-rules.mjs'),
   window: { addEventListener: (eventName, handler) => { keyListeners[eventName] = handler; } },
   document: { getElementById: () => ({ getContext: () => noOpCanvasContext }) },
   requestAnimationFrame: () => {}, // Loop is not driven; tests call updateGame directly.
 };
 vm.createContext(sandbox);
-for (const name of ['config', 'input', 'entities', 'game', 'render', 'main']) {
+for (const name of ['config', 'input', 'entities', 'game', 'render']) {
   const file = path.join(__dirname, '..', 'js', name + '.js');
   vm.runInContext(fs.readFileSync(file, 'utf8'), sandbox, { filename: file });
 }

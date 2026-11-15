@@ -1,5 +1,4 @@
 const { chromium } = require('playwright');
-const { pathToFileURL } = require('url');
 const path = require('path');
 const assert = require('assert');
 const fs = require('fs');
@@ -18,7 +17,7 @@ fs.mkdirSync(screenshots, { recursive: true });
       window.testTime = 0;
       Math.random = () => 0.5;
     });
-    await page.goto(pathToFileURL(path.join(root, 'index.html')).href);
+    await page.goto(process.env.GAME_URL || 'http://localhost:8000/');
     await page.evaluate(() => {
       const original = updateGame;
       window.updateGame = (state, input, dt) => { original(state, input, dt); window.observedState = state; };

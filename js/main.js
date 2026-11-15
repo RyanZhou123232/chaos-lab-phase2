@@ -1,3 +1,8 @@
+import * as GameRules from './game-rules.mjs';
+
+// The existing game and renderer use classic browser scripts.
+globalThis.GameRules = GameRules;
+
 // Entry point: wires the canvas, state, update, and render into a
 // requestAnimationFrame loop. Contains no game rules.
 

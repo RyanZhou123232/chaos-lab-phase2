@@ -83,23 +83,14 @@ function updatePlayerMovement(player, input, deltaSeconds) {
   if (input.isAnyHeld(KEY_BINDINGS.moveUp)) directionY -= 1;
   if (input.isAnyHeld(KEY_BINDINGS.moveDown)) directionY += 1;
 
-  // Normalize so diagonal movement isn't ~41% faster than straight movement.
-  const length = Math.hypot(directionX, directionY);
-  if (length > 0) {
-    const distance = CONFIG.playerSpeedPixelsPerSecond * deltaSeconds;
-    player.x += (directionX / length) * distance;
-    player.y += (directionY / length) * distance;
-  }
-
-  // Stations are intentionally not solid in Phase 1 (no physics); only the
-  // walls block the player.
-  const bounds = getWalkableBounds();
-  player.x = clamp(player.x, bounds.left + player.radius, bounds.right - player.radius);
-  player.y = clamp(player.y, bounds.top + player.radius, bounds.bottom - player.radius);
+  // Only the walls block the player. Stations can be walked over.
+  const position = GameRules.getPlayerPosition(
+    player, directionX, directionY, deltaSeconds, getWalkableBounds(), CONFIG
+  );
+  player.x = position.x;
+  player.y = position.y;
 }
 
-// Inner edge of the walls. Shared with render.js so walls are drawn exactly
-// where collision happens.
 function getWalkableBounds() {
   const wall = CONFIG.wallThicknessPixels;
   return {
@@ -121,11 +112,11 @@ function increaseDangerPassively(stations, deltaSeconds) {
 // Single entry point for every Danger change so the [0, 100] clamp can't be
 // forgotten by a new rule (repairs, incidents, ...).
 function changeStationDanger(station, amount) {
-  station.danger = clamp(station.danger + amount, CONFIG.minDanger, CONFIG.maxDanger);
+  station.danger = GameRules.clamp(station.danger + amount, CONFIG.minDanger, CONFIG.maxDanger);
 }
 
 function isStationOverloaded(station) {
-  return station.danger >= CONFIG.overloadDangerThreshold;
+  return GameRules.isStationOverloaded(station, CONFIG);
 }
 
 function isStationInWarning(station) {
@@ -158,8 +149,8 @@ function findStationInRepairRangeId(state) {
 // the same no matter how big stations are drawn.
 function distanceFromPointToStationEdge(pointX, pointY, station) {
   const half = station.size / 2;
-  const nearestX = clamp(pointX, station.x - half, station.x + half);
-  const nearestY = clamp(pointY, station.y - half, station.y + half);
+  const nearestX = GameRules.clamp(pointX, station.x - half, station.x + half);
+  const nearestY = GameRules.clamp(pointY, station.y - half, station.y + half);
   return Math.hypot(pointX - nearestX, pointY - nearestY);
 }
 
@@ -200,13 +191,11 @@ function getRepairProgressRatio(state) {
 }
 
 function completeRepair(state, repairedStation) {
-  changeStationDanger(repairedStation, -CONFIG.repairDangerReduction);
-
-  // Stress transfer follows the data-driven link, not hard-coded station names.
+  // Stress transfer follows the data-driven link.
   const linkedStation = findStationById(state.stations, repairedStation.linkedStationId);
-  if (linkedStation) {
-    changeStationDanger(linkedStation, CONFIG.repairLinkedStationDangerIncrease);
-  }
+  const { repairedDanger, linkedDanger } = GameRules.getRepairDangers(repairedStation, linkedStation, CONFIG);
+  repairedStation.danger = repairedDanger;
+  if (linkedStation) linkedStation.danger = linkedDanger;
 
   const now = getElapsedGameSeconds(state);
   state.dangerChangePopups.push({
@@ -298,13 +287,5 @@ function isAnyStationOverloaded(state) {
 // --- Integrity --------------------------------------------------------------
 
 function applyOverloadDamageToIntegrity(state, deltaSeconds) {
-  const overloadedStationCount = state.stations.filter(isStationOverloaded).length;
-  const damage = overloadedStationCount * CONFIG.overloadIntegrityDamagePerSecondPerStation * deltaSeconds;
-  state.integrity = Math.max(0, state.integrity - damage);
-}
-
-// --- Helpers ----------------------------------------------------------------
-
-function clamp(value, min, max) {
-  return Math.min(max, Math.max(min, value));
+  state.integrity = GameRules.getIntegrityAfterOverload(state.integrity, state.stations, deltaSeconds, CONFIG);
 }
