@@ -40,7 +40,7 @@ export function getRepairDangers(repairedStation, linkedStation, config) {
 }
 
 export function isStationOverloaded(station, config) {
-  return station.danger > config.overloadDangerThreshold;
+  return station.danger >= config.overloadDangerThreshold;
 }
 
 export function getIntegrityAfterOverload(integrity, stations, deltaSeconds, config) {
