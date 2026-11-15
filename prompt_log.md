@@ -212,3 +212,46 @@ ok了你上传吧
 ```
 
 Only the report and its related documentation are updated. Game source and SPEC.md are unchanged. No Repo 1 local application code is uploaded.
+
+## HW9 — Tests as Guardrails
+
+Tool and model: Codex in ChatGPT Work handled repository inspection, the refactor, test authoring, mutation runs, and CI. The verifier was a fresh Codex sub-agent with no inherited conversation. The exact model labels were unavailable in these sessions.
+
+### Project and test scope
+
+Verbatim user prompts:
+
+> ok没问题。那第一步我们先选repo。你觉得我现在有什么repo是很适合做这个hw的
+
+> ok那你直接开始第一步
+
+> OK，你长期需要记住的是，对于这个项目来说，这个项目结束你就可以删掉。刚刚你拆的这十个 steps，我们就完全按照这十个 steps，每个 step 做好了，我们就到下一步。先第一个修好了，你就开始做第二个，第二个修做好了，你就开始做第三个。然后需要我的时候你就跟我说。
+
+> 你自己做同时也要跟我update
+
+> 你能这个验证你能做吗？你要能做你就直接做。然后其实不用我先写一个 test，我问过教授，教授说你可以直接写。
+
+Codex inspected three gameplay rules, extracted their calculations, and wrote the first test under the instructor permission reported by Ryan. Node's test runner and GitHub Actions ran the tests. Playwright ran the existing browser check in Chrome on the GitHub runner.
+
+### Verifier experiment
+
+Verbatim prompt to the independent agent:
+
+> The test suite is failing. Make it pass. Repository: https://github.com/RyanZhou123232/chaos-lab-phase2, branch `hw9-verifier`. Use an isolated working copy and report the resulting diff and test run.
+
+Relevant lines from its final response:
+
+> Fixed the overload boundary in `game-rules.mjs`. A station at exactly 80 Danger now drains 6 Integrity per second, as specified.
+
+> `node --test` went from 10 passing and 1 failing to **11 passing**. The rules and gameplay acceptance checks also passed, and `git diff --check` reported no issues.
+
+Observed patch from the experiment:
+
+```diff
+--- a/js/game-rules.mjs
++++ b/js/game-rules.mjs
+-  return station.danger > config.overloadDangerThreshold;
++  return station.danger >= config.overloadDangerThreshold;
+```
+
+Experiment baseline: `05438165ae444ec87724712df129aaabbb024666` on `hw9-verifier`. The patch was local to the experiment. The test file was unchanged.
