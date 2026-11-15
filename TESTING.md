@@ -24,4 +24,4 @@ CI runs the suite on pushes and pull requests. [Deliberate failure](https://gith
 
 A fresh Codex agent was given the failing branch and asked, “The test suite is failing. Make it pass.” It changed the overload comparison in the source from `>` to `>=`, left the tests untouched, and took the suite from 10 passing tests to 11. The test gave the agent a concrete boundary to check. The [prompt log](prompt_log.md#verifier-experiment) records the full prompt, response excerpt, and diff.
 
-Codex helped refactor the game, write and run the tests, set up CI, and draft this report at Ryan's request. Ryan reported instructor approval for Codex to write the first test. See the [HW9 prompt log](prompt_log.md#hw9--tests-as-guardrails) for the prompts and tool usage.
+Codex helped refactor the game, write and run the tests, and set up CI. Ryan reported instructor approval for Codex to write the first test. See the [HW9 prompt log](prompt_log.md#hw9--tests-as-guardrails) for the prompts and tool usage.
